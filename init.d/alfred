@@ -1,0 +1,28 @@
+#!/bin/sh
+# /etc/init.d/alfred
+#
+
+source /etc/alfred.conf
+
+case "$1" in
+  start)
+    echo "Starting alfred daemon"
+
+    # start alfred on specified interface
+    alfred -i $INTERFACE
+
+    # switch to master mode
+    if [ $MASTER == 1 ]; then
+      alfred -M master
+    fi
+    ;;
+  stop)
+    echo "Stopping alfred daemon"
+    ;;
+  *)
+    echo "Usage: /etc/init.d/alfred {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0
