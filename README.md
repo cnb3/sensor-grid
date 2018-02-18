@@ -1,33 +1,123 @@
-Setup Instructions for batman-adv on Raspbian
----------------------------------------------
+# Sensor-grid Project
 
-* Set Locale
-  * Run `raspi-config`
-  * Add en-US locale
-  * Set locale to en-US
-  * Change keyboard layout
-* Configure wifi
-  * still `raspi-config`, it's easier
-* Install git from packages
-  * `sudo apt install git`
-* Install deps (see notes below)
-  - libnl-3-dev libnl-genl-3-dev libcap-dev libgps-dev gpsd
-* Clone batctl from source git
-* `make install` batctl
-* Install script (tbd, had to manually write it)
-* Take down dhcpcd service
-  * `sudo service dhcpcd stop`
-* Run setup script
-* `sudo batctl o`
+## Design
+
+## Getting Started
+
+### Prepare Pi
+
+#### Set Locale and Keyboard Layout
+
+```
+$ sudo raspi-config
+```
+
+* Add en-US locale
+* Change keyboard layout
+
+#### Configure Ethernet
+
+In `/etc/network/interfaces` add the following lines:
+
+```
+auto eth0
+allow-hotplug eth0
+iface eth0 inet dhcp
+```
+
+#### Disable conflicting services
+
+```
+$ sudo service dhcpcd stop
+$ sudo update-rc.d dhcpcd disable
+```
+
+### Install Software
+
+#### Install dependencies
+
+To build batman-adv and alfred, you will need the following packages:
+
+* git
+* libnl-3-dev
+* libnl-genl-3-dev
+* libcap-dev
+* libgps-dev
+* gpsd (optional, assuming we add gps modules later)
+
+#### Build batctl
+
+Pull and build batctl from the OpenMesh source repository
+
+```
+$ git clone https://git.open-mesh.org/batctl.git
+$ cd batctl
+$ sudo make install
+```
+
+#### Build alfred
+
+Pull and build alfred from the OpenMesh source repository
+
+```
+$ git clone https://git.open-mesh.org/alfred.git
+$ cd alfred 
+$ sudo make install
+```
+
+Copy the alfred.service from config to /etc/systemd/system/alfred.service.
+
+```
+$ sudo cp config/alfred.service /etc/systemd/system/alfred.service
+$ sudo systemctl daemon-reload
+$ sudo systemctl start alfred.service
+```
+
+To check status of the running service:
+
+```
+$ sudo systemctl status alfred.service
+```
+
+And to have alfred come up at boot:
+
+```
+$ sudo systemctl enable alfred.service
+```
+
+### Configure Pi
+
+#### Install batman-adv module
+
+```
+$ sudo echo "batman-adv" >> /etc/modules
+```
+
+#### Configure network interfaces
+
+```
+auto wlan0
+iface wlan0 inet6 manual
+  wireless-channel 1
+  wireless-essid killer-mesh
+  wireless-mode ad-hoc
+  wireless-ap 02:12:34:56:78:9A
+  pre-up /sbin/ifconfig wlan0 mtu 1532
+
+auto bat0
+iface bat0 inet6 auto
+  pre-up /usr/local/sbin/batctl if add wlan0
+```
+
+#### Check interfaces
+
+#### Check batctl
+
 
 
 TODOs, Short-term
 -----------------
 
-* Disable interfering and unneccesary init scripts (dhcpcd)
-  - DONE
-* write new init scripts to bring up bat0 and wlan0 under batman-adv
-  - DONE
 * decide how to install batctl
   * Debian package is too old
   * create a new package? not a bad idea, can keep a local .deb
