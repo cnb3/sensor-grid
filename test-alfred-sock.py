@@ -1,6 +1,6 @@
 import socket
 from construct import (
-    Adapter, Array, Byte, Embedded, Struct, Int8ub, Int16ub)
+    Adapter, Array, Byte, Bytes, Embedded, Struct, Int8ub, Int16ub)
 
 alfred_tlv = Struct(
     'type' / Int8ub,
@@ -39,14 +39,12 @@ alfred_data_block = Struct(
     'type' / Int8ub,
     'version' / Int8ub,
     'length' / Int16ub,
-    'data' / Array(
-        lambda ctx: ctx.length,
-        Byte)
+    'data' / Bytes(lambda ctx: ctx.length)
 )
 
 '''
 Container:
-    type = 65
+    type = 65 <------------ Make parsing of data blocks conditional on this!!!
     version = 0
     length = 12
     transaction_id = 1
