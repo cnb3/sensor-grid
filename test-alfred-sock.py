@@ -1,6 +1,15 @@
 import socket
 from construct import (
-    Adapter, Array, Byte, Bytes, Embedded, Struct, Int8ub, Int16ub)
+    Adapter,
+    Array,
+    Byte,
+    Bytes,
+    Embedded,
+    Struct,
+    Switch,
+    Int8ub,
+    Int16ub
+)
 
 alfred_tlv = Struct(
     'type' / Int8ub,
@@ -8,20 +17,25 @@ alfred_tlv = Struct(
     'length' / Int16ub
 )
 
-alfred_announce_master = Struct(
-    'alfred_tlv' / alfred_tlv,
-)
+alfred_announce_master = Struct()
 
 alfred_request = Struct(
-    'alfred_tlv' / Embedded(alfred_tlv),
     'requested_type' / Int8ub,
     'transaction_id' / Int16ub
 )
 
 alfred_status_end = Struct(
-    'alfred_tlv' / alfred_tlv,
     'transaction_id' / Int16ub,
     'number_of_packets' / Int16ub
+)
+
+alfred_status_error = Struct(
+    'transaction_id' / Int16ub,
+    'error_code' / Int16ub
+)
+
+alfred_mode_switch = Struct(
+    'mode' / Int8ub
 )
 
 
@@ -42,59 +56,54 @@ alfred_data_block = Struct(
     'data' / Bytes(lambda ctx: ctx.length)
 )
 
-'''
-Container:
-    type = 65 <------------ Make parsing of data blocks conditional on this!!!
-    version = 0
-    length = 12
-    transaction_id = 1
-    sequence_number = 0
-    source_mac_address_0-3 = 1583140554
-    source_mac_address_4-5 = 37720
-    data_0 = 29281
-    data_1 = 1936745061
-'''
-
 alfred_push_data = Struct(
-    'alfred_tlv' / alfred_tlv,
     'transaction_id' / Int16ub,
     'sequence_number' / Int16ub,
-    'alfred_data' / Array(
-        # lambda ctx: ctx.alfred_tlv.length,
-        1,
-        alfred_data_block)
+    'alfred_data' / Array(1, alfred_data_block)
+)
+
+alfred_packet = Struct(
+    'alfred_tlv' / alfred_tlv,
+    'packet_body' / Switch(lambda ctx: ctx.alfred_tlv.type, {
+        0: alfred_push_data,
+        1: alfred_announce_master,
+        2: alfred_request,
+        3: alfred_status_end,
+        4: alfred_status_error,
+        5: alfred_mode_switch
+    })
 )
 
 socket_address = '/var/run/alfred.sock'
 
-tlv = alfred_tlv.build({
-    'type': 2,
-    'version': 0,
-    'length': 3
+request = alfred_packet.build({
+    'alfred_tlv': {
+        'type': 2,
+        'version': 0,
+        'length': 3,
+    },
+    'packet_body': {
+        'requested_type': 65,
+        'transaction_id': 1
+    }
 })
 
-request = alfred_request.build({
-    'type': 2,
-    'version': 0,
-    'length': 3,
-    'requested_type': 65,
-    'transaction_id': 1
-})
-
-status = alfred_status_end.build({
+status = alfred_packet.build({
     'alfred_tlv': {
         'type': 3,
         'version': 0,
         'length': 4
     },
-    'transaction_id': 1,
-    'number_of_packets': 2
+    'packet_body': {
+        'transaction_id': 1,
+        'number_of_packets': 2
+    }
 })
 
 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
     s.connect(socket_address)
-    s.send(request)
-    s.send(status)
-    data = s.recv(1024)
+    s.sendall(request)
+    s.sendall(status)
+    data = s.recv(65535)
 
-print(alfred_push_data.parse(data))
+print(alfred_packet.parse(data))
