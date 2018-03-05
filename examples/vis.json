@@ -1,0 +1,38 @@
+{
+  "source_version" : "2017.4-8-g0bf4125",
+  "algorithm" : 4,
+  "vis" : [
+    { "primary" : "b8:27:eb:ae:15:c9",
+      "neighbors" : [
+         { "router" : "b8:27:eb:ae:15:c9",
+           "neighbor" : "b8:27:eb:0a:c0:9b",
+           "metric" : "1.186" },
+         { "router" : "b8:27:eb:ae:15:c9",
+           "neighbor" : "b8:27:eb:ac:37:1d",
+           "metric" : "1.000" },
+         { "router" : "b8:27:eb:ae:15:c9",
+           "neighbor" : "b8:27:eb:a3:0a:19",
+           "metric" : "1.000" }
+      ],
+      "clients" : [
+        "d2:f3:ae:49:19:34"
+      ]
+    },
+    { "primary" : "b8:27:eb:a3:0a:19",
+      "neighbors" : [
+         { "router" : "b8:27:eb:a3:0a:19",
+           "neighbor" : "b8:27:eb:0a:c0:9b",
+           "metric" : "1.032" },
+         { "router" : "b8:27:eb:a3:0a:19",
+           "neighbor" : "b8:27:eb:ae:15:c9",
+           "metric" : "1.143" },
+         { "router" : "b8:27:eb:a3:0a:19",
+           "neighbor" : "b8:27:eb:ac:37:1d",
+           "metric" : "1.000" }
+      ],
+      "clients" : [
+        "7e:eb:58:b5:ec:ba"
+      ]
+    }
+  ]
+}
